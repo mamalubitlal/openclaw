@@ -102,7 +102,33 @@ vi.mock("openclaw/plugin-sdk/config-runtime", async (importOriginal) => {
   };
 });
 
-vi.mock("openclaw/plugin-sdk/conversation-runtime", () => getPairingStoreMocks());
+vi.mock("openclaw/plugin-sdk/security-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/security-runtime")>();
+  return {
+    ...actual,
+    readStoreAllowFromForDmPolicy: async (params: {
+      provider: string;
+      accountId: string;
+      dmPolicy?: string;
+      shouldRead?: boolean;
+    }) => {
+      if (params.shouldRead === false || params.dmPolicy === "allowlist") {
+        return [];
+      }
+      return await readAllowFromStoreMock(params.provider, params.accountId);
+    },
+  };
+});
+
+vi.mock("openclaw/plugin-sdk/conversation-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("openclaw/plugin-sdk/conversation-runtime")>();
+  const pairingStoreMocks = getPairingStoreMocks();
+  return {
+    ...actual,
+    readChannelAllowFromStore: pairingStoreMocks.readChannelAllowFromStore,
+    upsertChannelPairingRequest: pairingStoreMocks.upsertChannelPairingRequest,
+  };
+});
 
 vi.mock("./session.js", () => ({
   createWaSocket: vi.fn().mockResolvedValue(sock),
