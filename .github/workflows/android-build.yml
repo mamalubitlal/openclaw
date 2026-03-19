@@ -1,0 +1,59 @@
+name: OpenClaw Android Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: # Allow manual trigger
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build OpenClaw Android
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      
+      - name: Grant execute permission for gradlew
+        run: chmod +x apps/android/gradlew
+        working-directory: apps/android
+      
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug
+        working-directory: apps/android
+      
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: openclaw-android-debug
+          path: apps/android/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
+      
+      - name: Build Summary
+        run: |
+          echo "## 🤖 OpenClaw Android Build Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Artifact:" >> $GITHUB_STEP_SUMMARY
+          echo "- Debug APK: apps/android/app/build/outputs/apk/debug/" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Download:" >> $GITHUB_STEP_SUMMARY
+          echo "Go to the **Actions** tab → Select this run → Download artifact" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download and install on your Android phone" >> $GITHUB_STEP_SUMMARY
+          echo "2. Open the app" >> $GITHUB_STEP_SUMMARY
+          echo "3. Pair with your OpenClaw instance" >> $GITHUB_STEP_SUMMARY
+          echo "4. Start controlling your device!" >> $GITHUB_STEP_SUMMARY
